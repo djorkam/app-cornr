@@ -1,0 +1,123 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Typography Improvements */
+@layer base {
+  /* Body Text - 16px on mobile, better contrast, improved line height */
+  body {
+    font-size: 16px;
+    color: #333333;
+    line-height: 1.6;
+  }
+  
+  /* Headings - Better hierarchy and boldness */
+  h1 {
+    font-size: 28px;
+    font-weight: 600;
+    color: #333333;
+    line-height: 1.4;
+  }
+  
+  h2 {
+    font-size: 22px;
+    font-weight: 600;
+    color: #333333;
+    line-height: 1.4;
+  }
+  
+  h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333333;
+    line-height: 1.4;
+  }
+  
+  /* Paragraph text */
+  p {
+    font-size: 16px;
+    color: #333333;
+    line-height: 1.6;
+  }
+  
+  /* Ensure minimum font size for readability */
+  small, .text-xs {
+    font-size: 14px !important;
+  }
+}
+
+@layer components {
+  /* Form Labels - Semi-bold with proper spacing */
+  .form-label {
+    @apply block text-sm font-semibold text-gray-700 mb-2;
+    color: #333333;
+  }
+  
+  /* Input Fields - Better borders and padding */
+  .form-input {
+    @apply w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-transparent;
+    border-color: #E0E0E0;
+    color: #333333;
+  }
+  
+  .form-input::placeholder {
+    color: #555555;
+    font-style: italic;
+  }
+  
+  /* Primary Button - Pastel purple with white text */
+  .btn-primary {
+    @apply w-full font-semibold py-3 px-4 rounded-xl transition-colors focus:outline-none focus:ring-2 focus:ring-purple-300 focus:ring-offset-2;
+    background-color: #B19CD9;
+    color: #FFFFFF;
+  }
+  
+  .btn-primary:hover {
+    background-color: #9F8BC7;
+  }
+  
+  .btn-primary:disabled {
+    background-color: #CCCCCC;
+    cursor: not-allowed;
+  }
+  
+  /* Secondary Button - Medium gray text, transparent background */
+  .btn-secondary {
+    @apply w-full font-semibold py-3 px-4 rounded-xl transition-colors;
+    background-color: transparent;
+    color: #666666;
+    border: 1px solid #CCCCCC;
+  }
+  
+  .btn-secondary:hover {
+    background-color: #F5F5F5;
+  }
+  
+  /* Skip Button - Less emphasis with proper spacing */
+  .btn-skip {
+    @apply w-full font-medium py-2 transition-colors;
+    color: #666666;
+    background-color: transparent;
+    margin-top: 16px;
+  }
+  
+  .btn-skip:hover {
+    color: #333333;
+  }
+  
+  /* Page Container - Better mobile padding */
+  .page-container {
+    @apply px-4;
+  }
+  
+  @screen sm {
+    .page-container {
+      @apply px-6;
+    }
+  }
+  
+  /* Section Spacing - 24px vertical spacing */
+  .section-spacing {
+    margin-bottom: 24px;
+  }
+}
