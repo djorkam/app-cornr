@@ -18,7 +18,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigateToProfile }) => {
       id: '2',
       name: 'Luna',
       image: 'https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=400',
-      description: 'Artist and yoga instructor, 2.5km away'
+      description: 'Artist and yoga instructor, 2.5 km away'
     }
   ];
 

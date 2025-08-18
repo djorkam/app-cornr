@@ -1,25 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
+import { UserProfile, calculateAge, formatGender } from "../utils/utils";
+import { PartnerManagement } from "./PartnerManagement";
 
 interface ProfileScreenProps {
-  userType: 'unicorn' | 'couple' | null;
-  userProfile: {
-    name: string;
-    birthdate: string;
-    bio: string;
-    photo: File | null;
-    location: string;
-    lookingFor: string;
-    interests: string[];
-  };
-  setUserProfile: React.Dispatch<React.SetStateAction<{
-    name: string;
-    birthdate: string;
-    bio: string;
-    photo: File | null;
-    location: string;
-    lookingFor: string;
-    interests: string[];
-  }>>;
+  userType: "unicorn" | "couple";
+  userProfile: UserProfile;
+  setUserProfile: React.Dispatch<React.SetStateAction<UserProfile>>;
   saveMessage: string;
   handleSaveProfile: () => void;
 }
@@ -29,63 +15,74 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   userProfile,
   setUserProfile,
   saveMessage,
-  handleSaveProfile
+  handleSaveProfile,
 }) => {
-  const [newInterest, setNewInterest] = useState('');
-  
+  const [newInterest, setNewInterest] = useState("");
+
   const addInterest = (interest: string) => {
     if (interest.trim() && !userProfile.interests.includes(interest.trim())) {
-      setUserProfile(prev => ({
+      setUserProfile((prev) => ({
         ...prev,
-        interests: [...prev.interests, interest.trim()]
+        interests: [...prev.interests, interest.trim()],
       }));
     }
   };
-  
+
   const removeInterest = (interest: string) => {
-    setUserProfile(prev => ({
+    setUserProfile((prev) => ({
       ...prev,
-      interests: prev.interests.filter(i => i !== interest)
+      interests: prev.interests.filter((i) => i !== interest),
     }));
   };
-  
+
   const handleInterestKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && newInterest.trim()) {
+    if (e.key === "Enter" && newInterest.trim()) {
       addInterest(newInterest);
-      setNewInterest('');
+      setNewInterest("");
     }
   };
-  
+
   return (
     <div className="max-w-4xl mx-auto page-container pb-20">
-      <h2 className="text-2xl font-semibold mb-6 section-spacing">Your Profile</h2>
-      
+      <h2 className="text-2xl font-semibold mb-6 section-spacing">
+        Your Profile
+      </h2>
+
       {/* Profile Type Badge */}
       <div className="mb-6 section-spacing">
-        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-          userType === 'unicorn' 
-            ? 'bg-purple-100 text-purple-700' 
-            : 'bg-pink-100 text-pink-700'
-        }`}>
-          {userType === 'unicorn' ? '🦄 Unicorn Profile' : '👫 Couple Profile'}
+        <span
+          className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+            userType === "unicorn"
+              ? "bg-purple-100 text-purple-700"
+              : "bg-pink-100 text-pink-700"
+          }`}
+        >
+          {userType === "unicorn" ? "🦄 Unicorn Profile" : "👫 Couple Profile"}
         </span>
       </div>
 
       {/* Profile Photo Section */}
       <div className="bg-white rounded-xl shadow-sm border border-purple-100 p-6 mb-6 section-spacing">
-        <h3 className="text-lg font-semibold mb-4 text-gray-800">Profile Photo</h3>
+        <h3 className="text-lg font-semibold mb-4 text-gray-800">
+          Profile Photo
+        </h3>
         <div className="flex items-center space-x-4">
           <div className="w-24 h-24 bg-purple-100 rounded-full flex items-center justify-center">
             <span className="text-purple-600 text-2xl">
-              {userType === 'unicorn' ? '🦄' : '👫'}
+              {userType === "unicorn" ? "🦄" : "👫"}
             </span>
           </div>
           <div>
-            <button className="px-4 py-2 rounded-lg text-sm font-medium transition-colors" style={{ backgroundColor: '#B19CD9', color: '#FFFFFF' }}>
-              {userType === 'couple' ? 'Upload Joint Photo' : 'Upload Photo'}
+            <button
+              className="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+              style={{ backgroundColor: "#B19CD9", color: "#FFFFFF" }}
+            >
+              {userType === "couple" ? "Upload Joint Photo" : "Upload Photo"}
             </button>
-            <p className="text-xs mt-1" style={{ color: '#B0B0B0' }}>
-              {userType === 'couple' ? 'Joint photo or two small ones' : 'Your best photo'}
+            <p className="text-xs mt-1" style={{ color: "#B0B0B0" }}>
+              {userType === "couple"
+                ? "Joint photo or two small ones"
+                : "Your best photo"}
             </p>
           </div>
         </div>
@@ -93,35 +90,41 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 
       {/* Basic Information */}
       <div className="bg-white rounded-xl shadow-sm border border-purple-100 p-6 mb-6 section-spacing">
-        <h3 className="text-lg font-semibold mb-4 text-gray-800">Basic Information</h3>
+        <h3 className="text-lg font-semibold mb-4 text-gray-800">
+          Basic Information
+        </h3>
         <div className="space-y-4">
           {/* Name */}
           <div>
             <label className="form-label">
-              {userType === 'couple' ? 'Names (e.g. "Anna & Luca")' : 'Name'}
+              {userType === "couple" ? 'Names (e.g. "Anna & Luca")' : "Name"}
             </label>
             <input
               type="text"
               className="form-input"
-              placeholder={userType === 'couple' ? 'Anna & Luca' : 'Your name'}
+              placeholder={userType === "couple" ? "Anna & Luca" : "Your name"}
               value={userProfile.name}
-              onChange={(e) => setUserProfile(prev => ({ ...prev, name: e.target.value }))}
+              onChange={(e) =>
+                setUserProfile((prev) => ({ ...prev, name: e.target.value }))
+              }
             />
           </div>
 
           {/* Age */}
           <div>
             <label className="form-label">
-              {userType === 'couple' ? 'Ages (both individuals)' : 'Age'}
+              {userType === "couple" ? "Ages (both individuals)" : "Age"}
             </label>
-            {userType === 'couple' ? (
+            {userType === "couple" ? (
               <div className="flex space-x-2">
                 <input
                   type="number"
                   className="form-input"
-                  placeholder="Your age"
+                  placeholder={userProfile.birthdate ? calculateAge(userProfile.birthdate).toString() : "Your age"}
+                  value={userProfile.birthdate ? calculateAge(userProfile.birthdate) : ""}
                   min="18"
                   max="99"
+                  readOnly
                 />
                 <input
                   type="number"
@@ -129,6 +132,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                   placeholder="Partner's age"
                   min="18"
                   max="99"
+                  disabled
+                  title="Partner's age will be available after linking accounts"
                 />
               </div>
             ) : (
@@ -138,19 +143,27 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                 placeholder="Your age"
                 min="18"
                 max="99"
-                value={userProfile.birthdate ? (() => {
-                  const birthDate = new Date(userProfile.birthdate);
-                  const today = new Date();
-                  let age = today.getFullYear() - birthDate.getFullYear();
-                  const monthDiff = today.getMonth() - birthDate.getMonth();
-                  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-                    age--;
-                  }
-                  return age;
-                })() : ''}
+                value={
+                  userProfile.birthdate
+                    ? calculateAge(userProfile.birthdate)
+                    : ""
+                }
                 readOnly
               />
             )}
+            {userType === "couple" && (
+              <p className="text-sm text-gray-500 mt-2">
+                Partner's age will be displayed after linking your accounts
+              </p>
+            )}
+          </div>
+
+          {/* Gender */}
+          <div>
+            <label className="form-label">Gender</label>
+            <p className="text-sm text-gray-700">
+              {formatGender(userProfile.gender, userProfile.customGender)}
+            </p>
           </div>
 
           {/* Location */}
@@ -159,54 +172,81 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             <input
               type="text"
               className="form-input"
-              placeholder="City, State"
+              placeholder="To be completed - will use your actual location"
               value={userProfile.location}
-              onChange={(e) => setUserProfile(prev => ({ ...prev, location: e.target.value }))}
+              onChange={(e) =>
+                setUserProfile((prev) => ({
+                  ...prev,
+                  location: e.target.value,
+                }))
+              }
+              disabled
             />
+            <p className="text-sm text-gray-500 mt-2">
+              Location will be automatically detected in a future update
+            </p>
           </div>
         </div>
       </div>
 
       {/* Bio Section */}
       <div className="bg-white rounded-xl shadow-sm border border-purple-100 p-6 mb-6 section-spacing">
-        <h3 className="text-lg font-semibold mb-4 text-gray-800">About {userType === 'couple' ? 'Us' : 'Me'}</h3>
+        <h3 className="text-lg font-semibold mb-4 text-gray-800">
+          About {userType === "couple" ? "Us" : "Me"}
+        </h3>
         <div>
           <label className="form-label">
-            Bio / About {userType === 'couple' ? 'us' : 'me'}
+            Bio / About {userType === "couple" ? "us" : "me"}
           </label>
           <textarea
             rows={4}
             className="form-input resize-none"
-            placeholder={userType === 'couple' 
-              ? 'Tell others about yourselves as a couple. You can write a shared bio or include short individual descriptions.'
-              : 'Tell others about yourself, your interests, and what makes you unique.'
+            placeholder={
+              userType === "couple"
+                ? "Tell others about yourselves as a couple. You can write a shared bio or include short individual descriptions."
+                : "Tell others about yourself, your interests, and what makes you unique."
             }
             value={userProfile.bio}
-            onChange={(e) => setUserProfile(prev => ({ ...prev, bio: e.target.value }))}
+            onChange={(e) =>
+              setUserProfile((prev) => ({ ...prev, bio: e.target.value }))
+            }
           />
           <p className="text-sm mt-1 text-gray-500 leading-relaxed">
-            {userType === 'couple' ? 'Can be a shared bio or two short individual bios' : 'Share what makes you unique'}
+            {userType === "couple"
+              ? "Can be a shared bio or two short individual bios"
+              : "Share what makes you unique"}
           </p>
         </div>
       </div>
 
       {/* Looking For Section */}
       <div className="bg-white rounded-xl shadow-sm border border-purple-100 p-6 mb-6 section-spacing">
-        <h3 className="text-lg font-semibold mb-4 text-gray-800">Looking For</h3>
+        <h3 className="text-lg font-semibold mb-4 text-gray-800">
+          Looking For
+        </h3>
         <div>
           <label className="form-label">What are you looking for?</label>
-          <select 
+          <select
             className="form-input"
             value={userProfile.lookingFor}
-            onChange={(e) => setUserProfile(prev => ({ ...prev, lookingFor: e.target.value }))}
+            onChange={(e) =>
+              setUserProfile((prev) => ({
+                ...prev,
+                lookingFor: e.target.value,
+              }))
+            }
           >
             <option value="">Select what you're looking for</option>
-            {userType === 'couple' ? (
+            {userType === "couple" ? (
               <>
                 <option value="unicorn">Looking for a unicorn</option>
-                <option value="curious-connections">Open to curious connections</option>
+                <option value="curious-connections">
+                  Open to curious connections
+                </option>
                 <option value="friendship">Friendship first</option>
-                <option value="casual-meetup">Grab a beer or a glass of wine</option>
+                <option value="casual-meetup">
+                  Grab a beer or a glass of wine
+                </option>
                 <option value="exploring">Just exploring</option>
               </>
             ) : (
@@ -214,7 +254,9 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                 <option value="couples">Interested in couples</option>
                 <option value="curious-connections">Curious connections</option>
                 <option value="friendship">Friendship first</option>
-                <option value="casual-meetup">Grab a beer or a glass of wine</option>
+                <option value="casual-meetup">
+                  Grab a beer or a glass of wine
+                </option>
                 <option value="exploring">Just exploring</option>
               </>
             )}
@@ -224,7 +266,9 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 
       {/* Interests/Tags Section */}
       <div className="bg-white rounded-xl shadow-sm border border-purple-100 p-6 mb-6 section-spacing">
-        <h3 className="text-lg font-semibold mb-4 text-gray-800">Interests & Tags</h3>
+        <h3 className="text-lg font-semibold mb-4 text-gray-800">
+          Interests & Tags
+        </h3>
         <div className="mb-4">
           <label className="form-label">Add your interests</label>
           <input
@@ -236,7 +280,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             onKeyPress={handleInterestKeyPress}
           />
         </div>
-        
+
         {/* Current Interests */}
         {userProfile.interests.length > 0 && (
           <div className="mb-4">
@@ -252,17 +296,26 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                     onClick={() => removeInterest(interest)}
                     className="ml-2 text-purple-600 hover:text-purple-800"
                   >
-                    ×
+                    Ã—
                   </button>
                 </span>
               ))}
             </div>
           </div>
         )}
-        
+
         {/* Sample Tags */}
         <div className="flex flex-wrap gap-2 mb-4">
-          {['Travel', 'Yoga', 'Cooking', 'Music', 'Art', 'Hiking', 'Photography', 'Dancing'].map((tag) => (
+          {[
+            "Travel",
+            "Yoga",
+            "Cooking",
+            "Music",
+            "Art",
+            "Hiking",
+            "Photography",
+            "Dancing",
+          ].map((tag) => (
             <button
               key={tag}
               className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm hover:bg-purple-200 transition-colors cursor-pointer"
@@ -272,9 +325,21 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             </button>
           ))}
         </div>
-        
-        <p className="text-sm text-gray-500 leading-relaxed">Click on interests above to add them to your profile</p>
+
+        <p className="text-sm text-gray-500 leading-relaxed">
+          Click on interests above to add them to your profile
+        </p>
       </div>
+
+      {/* Partner Management Section - Only for couples */}
+      {userType === "couple" && (
+        <div className="section-spacing">
+          <h3 className="text-lg font-semibold mb-4 text-gray-800">
+            Partner Connection
+          </h3>
+          <PartnerManagement userId="demo-user-id" userType={userType} />
+        </div>
+      )}
 
       {/* Save Button */}
       <div className="bg-white rounded-xl shadow-sm border border-purple-100 p-6 section-spacing">
@@ -283,10 +348,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             {saveMessage}
           </div>
         )}
-        <button 
-          className="btn-primary"
-          onClick={handleSaveProfile}
-        >
+        <button className="btn-primary" onClick={handleSaveProfile}>
           Save Profile Changes
         </button>
       </div>

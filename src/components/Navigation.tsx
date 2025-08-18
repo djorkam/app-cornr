@@ -16,17 +16,29 @@ export const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-purple-100 px-4 py-2">
+    <nav className="fixed bottom-0 left-0 right-0 border-t px-4 py-2 transition-colors" style={{ backgroundColor: 'var(--bg-primary)', borderColor: 'var(--purple-light)' }}>
       <div className="flex justify-around max-w-md mx-auto">
         {tabs.map(({ id, icon: Icon, label }) => (
           <button
             key={id}
             onClick={() => onTabChange(id)}
-            className={`flex flex-col items-center space-y-1 p-2 rounded-lg transition-colors ${
-              activeTab === id
-                ? 'text-purple-600 bg-purple-50'
-                : 'text-gray-500 hover:text-purple-600 hover:bg-purple-25'
-            }`}
+            className="flex flex-col items-center space-y-1 p-2 rounded-lg transition-colors"
+            style={{
+              color: activeTab === id ? 'var(--purple-primary)' : 'var(--text-tertiary)',
+              backgroundColor: activeTab === id ? 'var(--purple-light)' : 'transparent'
+            }}
+            onMouseEnter={(e) => {
+              if (activeTab !== id) {
+                e.currentTarget.style.color = 'var(--purple-primary)';
+                e.currentTarget.style.backgroundColor = 'var(--purple-lighter)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (activeTab !== id) {
+                e.currentTarget.style.color = 'var(--text-tertiary)';
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }
+            }}
           >
             <Icon className="w-5 h-5" />
             <span className="text-xs font-medium">{label}</span>
