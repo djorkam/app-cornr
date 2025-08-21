@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Search, Bell, ArrowLeft } from 'lucide-react';
+import { Search, Bell, Check } from 'lucide-react';
 import { ChatConversation } from './ChatConversation';
 
 interface Message {
   id: string;
   senderId: string;
+  senderName?: string; // For couples - which partner sent the message
   content: string;
   timestamp: Date;
   isRead: boolean;
@@ -16,9 +17,21 @@ interface Chat {
   participantName: string;
   participantAvatar: string;
   participantType: 'unicorn' | 'couple';
+  // For couples - individual partner info
+  partnerA?: {
+    id: string;
+    name: string;
+    avatar?: string;
+  };
+  partnerB?: {
+    id: string;
+    name: string;
+    avatar?: string;
+  };
   lastMessage: Message;
   unreadCount: number;
   isOnline?: boolean;
+  isVerified?: boolean;
 }
 
 const mockChats: Chat[] = [
@@ -32,11 +45,12 @@ const mockChats: Chat[] = [
       id: 'msg1',
       senderId: 'user1',
       content: 'Hey! I saw your profile and loved your art pieces. Would love to chat more about your creative process!',
-      timestamp: new Date(Date.now() - 5 * 60 * 1000), // 5 minutes ago
+      timestamp: new Date(Date.now() - 5 * 60 * 1000),
       isRead: false
     },
-    unreadCount: 2,
-    isOnline: true
+    unreadCount: 3,
+    isOnline: true,
+    isVerified: true
   },
   {
     id: '2',
@@ -48,11 +62,12 @@ const mockChats: Chat[] = [
       id: 'msg2',
       senderId: 'demo-user-id',
       content: 'Thanks for the great conversation yesterday! Looking forward to meeting up this weekend.',
-      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
       isRead: true
     },
     unreadCount: 0,
-    isOnline: false
+    isOnline: false,
+    isVerified: false
   },
   {
     id: '3',
@@ -64,11 +79,12 @@ const mockChats: Chat[] = [
       id: 'msg3',
       senderId: 'user3',
       content: 'The yoga class was amazing! We should definitely go together next time 🧘‍♀️',
-      timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
+      timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000),
       isRead: true
     },
-    unreadCount: 0,
-    isOnline: true
+    unreadCount: 1,
+    isOnline: true,
+    isVerified: true
   },
   {
     id: '4',
@@ -80,11 +96,12 @@ const mockChats: Chat[] = [
       id: 'msg4',
       senderId: 'couple2',
       content: 'We had such a great time at dinner! Hope we can do it again soon.',
-      timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
+      timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
       isRead: true
     },
     unreadCount: 0,
-    isOnline: false
+    isOnline: false,
+    isVerified: false
   },
   {
     id: '5',
@@ -96,11 +113,12 @@ const mockChats: Chat[] = [
       id: 'msg5',
       senderId: 'demo-user-id',
       content: 'Your tech background is so interesting! I\'d love to learn more about your projects.',
-      timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 1 week ago
+      timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
       isRead: true
     },
     unreadCount: 0,
-    isOnline: false
+    isOnline: false,
+    isVerified: true
   }
 ];
 
@@ -109,16 +127,16 @@ const formatTimestamp = (timestamp: Date): string => {
   const diffInMinutes = Math.floor((now.getTime() - timestamp.getTime()) / (1000 * 60));
   
   if (diffInMinutes < 1) return 'now';
-  if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+  if (diffInMinutes < 60) return `${diffInMinutes}m`;
   
   const diffInHours = Math.floor(diffInMinutes / 60);
-  if (diffInHours < 24) return `${diffInHours}h ago`;
+  if (diffInHours < 24) return `${diffInHours}h`;
   
   const diffInDays = Math.floor(diffInHours / 24);
-  if (diffInDays < 7) return `${diffInDays}d ago`;
+  if (diffInDays < 7) return `${diffInDays}d`;
   
   const diffInWeeks = Math.floor(diffInDays / 7);
-  if (diffInWeeks < 4) return `${diffInWeeks}w ago`;
+  if (diffInWeeks < 4) return `${diffInWeeks}w`;
   
   return timestamp.toLocaleDateString();
 };
@@ -142,29 +160,24 @@ export const ChatList: React.FC = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto pb-20" style={{ backgroundColor: 'var(--bg-secondary)' }}>
-      {/* Header */}
-      <div className="sticky top-0 z-10 border-b transition-colors" style={{ backgroundColor: 'var(--bg-primary)', borderColor: 'var(--purple-light)' }}>
+    <div className="max-w-4xl mx-auto pb-20" style={{ backgroundColor: '#faf7ff' }}>
+      {/* Header - keeping original design with purple theme */}
+      <div className="sticky top-0 z-10 border-b transition-colors" style={{ backgroundColor: '#ffffff', borderColor: '#e9d5ff' }}>
         <div className="px-4 py-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-3">
-              <img 
-                src="/cornr_logo_orig_bg_removed_name_removed.png" 
-                alt="CORNR" 
-                className="h-6"
-              />
-              <h1 className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>Messages</h1>
+              <h1 className="text-xl font-semibold" style={{ color: '#1f2937' }}>Messages</h1>
             </div>
             
             <div className="flex items-center space-x-2">
               <button 
                 className="p-2 rounded-full transition-colors"
                 style={{ 
-                  color: 'var(--purple-primary)',
+                  color: '#8b5cf6',
                   backgroundColor: 'transparent'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'var(--purple-light)';
+                  e.currentTarget.style.backgroundColor = '#f3e8ff';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.backgroundColor = 'transparent';
@@ -176,11 +189,11 @@ export const ChatList: React.FC = () => {
               <button 
                 className="p-2 rounded-full transition-colors"
                 style={{ 
-                  color: 'var(--purple-primary)',
+                  color: '#8b5cf6',
                   backgroundColor: 'transparent'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'var(--purple-light)';
+                  e.currentTarget.style.backgroundColor = '#f3e8ff';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.backgroundColor = 'transparent';
@@ -194,7 +207,7 @@ export const ChatList: React.FC = () => {
 
           {/* Search Bar */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: '#9ca3af' }} />
             <input
               type="text"
               placeholder="Search conversations..."
@@ -202,16 +215,16 @@ export const ChatList: React.FC = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border rounded-full focus:outline-none focus:ring-2 focus:border-transparent transition-colors"
               style={{
-                borderColor: 'var(--border-primary)',
-                backgroundColor: 'var(--bg-tertiary)',
-                color: 'var(--text-primary)'
+                borderColor: '#e5e7eb',
+                backgroundColor: '#f9fafb',
+                color: '#1f2937'
               }}
             />
           </div>
         </div>
       </div>
 
-      {/* Chat List */}
+      {/* Chat List with refined styling */}
       <div className="px-4 py-2">
         {filteredChats.length === 0 ? (
           <div className="text-center py-12">
@@ -225,25 +238,25 @@ export const ChatList: React.FC = () => {
               <button
                 key={chat.id}
                 onClick={() => setSelectedChat(chat)}
-                className="w-full p-4 rounded-xl border transition-all duration-200 text-left hover:shadow-md"
+                className="w-full p-4 rounded-2xl border transition-all duration-200 text-left hover:shadow-md"
                 style={{
-                  backgroundColor: 'var(--bg-primary)',
-                  borderColor: 'var(--border-primary)',
-                  boxShadow: 'var(--shadow)'
+                  backgroundColor: '#ffffff',
+                  borderColor: '#e5e7eb',
+                  boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--purple-light)';
-                  e.currentTarget.style.backgroundColor = 'var(--purple-lighter)';
+                  e.currentTarget.style.borderColor = '#e9d5ff';
+                  e.currentTarget.style.backgroundColor = '#faf5ff';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--border-primary)';
-                  e.currentTarget.style.backgroundColor = 'var(--bg-primary)';
+                  e.currentTarget.style.borderColor = '#e5e7eb';
+                  e.currentTarget.style.backgroundColor = '#ffffff';
                 }}
               >
                 <div className="flex items-center space-x-3">
-                  {/* Avatar */}
+                  {/* Avatar with online dot and verification */}
                   <div className="relative flex-shrink-0">
-                    <div className="w-12 h-12 rounded-full overflow-hidden border-2" style={{ borderColor: 'var(--purple-light)' }}>
+                    <div className="w-12 h-12 rounded-2xl overflow-hidden border-2" style={{ borderColor: '#e9d5ff' }}>
                       <img
                         src={chat.participantAvatar}
                         alt={chat.participantName}
@@ -254,39 +267,43 @@ export const ChatList: React.FC = () => {
                     {chat.isOnline && (
                       <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></div>
                     )}
-                    {/* Type badge */}
-                    <div className="absolute -top-1 -right-1">
-                      <span className={`text-xs ${
-                        chat.participantType === 'unicorn' ? '🦄' : '👫'
-                      }`}>
-                        {chat.participantType === 'unicorn' ? '🦄' : '👫'}
-                      </span>
-                    </div>
                   </div>
 
                   {/* Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
-                      <h3 className={`font-medium truncate ${
-                        chat.unreadCount > 0 ? 'font-semibold' : ''
-                      }`} style={{ color: 'var(--text-primary)' }}>
-                        {chat.participantName}
-                      </h3>
+                      <div className="flex items-center space-x-2">
+                        <h3 className={`font-medium truncate ${
+                          chat.unreadCount > 0 ? 'font-semibold' : ''
+                        }`} style={{ color: '#1f2937' }}>
+                          {chat.participantName}
+                        </h3>
+                        {/* Verification badge */}
+                        {chat.isVerified && (
+                          <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
+                            <Check className="w-2.5 h-2.5 text-white" />
+                          </div>
+                        )}
+                      </div>
                       <div className="flex items-center space-x-2 flex-shrink-0">
-                        <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                        <span className="text-xs" style={{ color: '#9ca3af' }}>
                           {formatTimestamp(chat.lastMessage.timestamp)}
                         </span>
                         {chat.unreadCount > 0 && (
-                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--purple-primary)' }}></div>
+                          <div className="w-5 h-5 rounded-full flex items-center justify-center text-xs text-white" style={{ backgroundColor: '#8b5cf6' }}>
+                            {chat.unreadCount > 9 ? '9+' : chat.unreadCount}
+                          </div>
                         )}
                       </div>
                     </div>
                     <p className={`text-sm truncate ${
                       chat.unreadCount > 0 ? 'font-medium' : ''
                     }`} style={{ 
-                      color: chat.unreadCount > 0 ? 'var(--text-primary)' : 'var(--text-secondary)' 
+                      color: chat.unreadCount > 0 ? '#1f2937' : '#6b7280' 
                     }}>
-                      {chat.lastMessage.senderId === 'demo-user-id' ? 'You: ' : ''}
+                      {chat.lastMessage.senderId === 'demo-user-id' && (
+                        <span style={{ color: '#8b5cf6' }}>You: </span>
+                      )}
                       {chat.lastMessage.content}
                     </p>
                   </div>
