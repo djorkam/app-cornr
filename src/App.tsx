@@ -1,6 +1,4 @@
-import React from 'react';
-import { useState } from 'react';
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { SignInScreen } from './components/SignInScreen';
 import { RegisterScreen } from './components/RegisterScreen';
 import { Header } from './components/Header';
@@ -11,6 +9,7 @@ import { ProfileScreen } from './components/ProfileScreen';
 import { EnterCodeScreen } from './components/EnterCodeScreen';
 import { ChatList } from './components/ChatList';
 import { extractInviteCodeFromUrl, storePendingInviteCode } from './utils/partnerUtils';
+import {UserProfile} from './utils/utils';
 
 export default function App() {
   const [showInviteFlow, setShowInviteFlow] = useState(false);
