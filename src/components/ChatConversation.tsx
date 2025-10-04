@@ -183,13 +183,13 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({ chat, onBack
       if (senderName === 'Sarah' || senderId === 'sarah_id') {
         return {
           background: 'linear-gradient(135deg, #f0fdfa 0%, #e6fffa 100%)', // Very light teal
-          text: '#0d9488', // Teal from logo
+          text: '#E8859B', // Teal from logo
           border: '#99f6e4' // Light teal border
         };
       } else {
         return {
           background: 'linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%)', // Very light burgundy/pink
-          text: '#be185d', // Burgundy/deep pink from logo  
+          text: '#7BC4B8', // Burgundy/deep pink from logo  
           border: '#f9a8d4' // Light pink border
         };
       }

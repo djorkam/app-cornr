@@ -148,10 +148,7 @@ export const DiscoveryFeed: React.FC = () => {
   // Safety check - if no current user, show fallback
   if (!currentUser) {
     return (
-      <div
-        className="relative h-screen overflow-hidden flex items-center justify-center"
-        style={{ backgroundColor: "var(--bg-secondary)" }}
-      >
+      <div className="relative h-screen overflow-hidden flex items-center justify-center pb-20" style={{ backgroundColor: "var(--bg-secondary)" }}>
         <div className="text-center px-6">
           <p className="text-gray-500 text-lg mb-2">No users to display</p>
           <p className="text-gray-400 text-sm">
@@ -462,19 +459,25 @@ export const DiscoveryFeed: React.FC = () => {
 
   return (
     <div
-      className="relative h-screen overflow-hidden"
-      style={{ backgroundColor: "var(--bg-secondary)" }}
+      
+      className="relative h-screen overflow-hidden bg-purple-50" 
+      
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
+      
+      
     >
       {/* Main Content */}
       <div
         ref={scrollContainerRef}
-        className={`h-full overflow-y-auto pb-24 scrollbar-hide transition-all duration-300 ${
-          isTransitioning ? "opacity-50" : "opacity-100"
+        className={`h-full overflow-y-auto scrollbar-hide transition-all duration-300 ${
+        
+                  isTransitioning ? "opacity-50" : "opacity-100"
         } ${isBouncing ? "animate-bounce-subtle" : ""}`}
-        style={{ scrollBehavior: "smooth" }}
+      style={{ scrollBehavior: "smooth",
+             paddingBottom: "160px" }}
+        
       >
         {/* Essential Section */}
         <div ref={essentialSectionRef} className="relative">
@@ -579,7 +582,8 @@ export const DiscoveryFeed: React.FC = () => {
       </div>
 
       {/* Floating Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-4 shadow-lg z-50">
+      
+     <div className="fixed bottom-16 left-0 right-0 bg-white border-t border-gray-200 px-6 py-4 shadow-lg z-30">   
         {/* Progress Indicator */}
         <div className="w-full h-1 bg-gray-200 rounded-full mb-4">
           <div
@@ -598,6 +602,7 @@ export const DiscoveryFeed: React.FC = () => {
                 ? "bg-white border-gray-300 text-gray-600 hover:bg-gray-50 hover:border-gray-400 shadow-md hover:shadow-lg"
                 : "bg-gray-100 border-gray-200 text-gray-300 cursor-not-allowed"
             }`}
+            style={{ zIndex: 31 }}
             aria-label="Pass"
           >
             <X className="w-7 h-7" />
@@ -611,6 +616,7 @@ export const DiscoveryFeed: React.FC = () => {
                 ? "bg-purple-500 border-purple-500 text-white hover:bg-purple-600 hover:border-purple-600 shadow-md hover:shadow-lg"
                 : "bg-purple-200 border-purple-200 text-purple-300 cursor-not-allowed"
             }`}
+            style={{ zIndex: 31 }}
             aria-label="Like"
           >
             <Heart className="w-7 h-7" />
