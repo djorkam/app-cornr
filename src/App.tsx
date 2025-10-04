@@ -7,7 +7,8 @@ import { HomePage } from './components/HomePage';
 import { DiscoveryFeed } from './components/DiscoveryFeed';
 import { ProfileScreen } from './components/ProfileScreen';
 import { EnterCodeScreen } from './components/EnterCodeScreen';
-import { ChatList } from './components/ChatList';
+import { ConnectionsScreen } from './components/ConnectionsScreen';
+import { DiscoveryPreferencesScreen } from './components/DiscoveryPreferencesScreen';
 import { extractInviteCodeFromUrl, storePendingInviteCode } from './utils/partnerUtils';
 import {UserProfile} from './utils/utils';
 
@@ -29,6 +30,15 @@ export default function App() {
     interests: [],
   });
   const [saveMessage, setSaveMessage] = useState('');
+  const [showDiscoveryPreferences, setShowDiscoveryPreferences] = useState(false);
+  const [discoveryPreferences, setDiscoveryPreferences] = useState({
+    maxDistance: 50,
+    pauseDiscovery: false,
+    preferredCoupleAgeRange: [22, 45] as [number, number],
+    coupleComposition: ['any-couple'],
+    preferredUnicornAgeRange: [22, 45] as [number, number],
+    preferredUnicornGender: ['open-to-all']
+  });
 
   // Handle deep link invite codes
   useEffect(() => {
@@ -88,6 +98,19 @@ export default function App() {
     // Could show a success message or update user profile
   };
 
+  const handleNavigateToDiscoveryPreferences = () => {
+    setShowDiscoveryPreferences(true);
+  };
+
+  const handleBackFromDiscoveryPreferences = () => {
+    setShowDiscoveryPreferences(false);
+  };
+
+  const handleSaveDiscoveryPreferences = (preferences: any) => {
+    setDiscoveryPreferences(preferences);
+    setShowDiscoveryPreferences(false);
+  };
+
   // Show invite code entry screen if we have a deep link code and user is authenticated
   if (showInviteFlow || (inviteCode && isAuthenticated)) {
     return (
@@ -100,6 +123,18 @@ export default function App() {
           setActiveTab('profile');
         }}
         prefilledCode={inviteCode || undefined}
+      />
+    );
+  }
+
+  // Show Discovery Preferences screen
+  if (showDiscoveryPreferences) {
+    return (
+      <DiscoveryPreferencesScreen
+        userType={userType}
+        onBack={handleBackFromDiscoveryPreferences}
+        onSave={handleSaveDiscoveryPreferences}
+        initialPreferences={discoveryPreferences}
       />
     );
   }
@@ -131,19 +166,8 @@ export default function App() {
         return <HomePage onNavigateToProfile={() => setActiveTab('profile')} />;
       case 'discover':
         return <DiscoveryFeed />;
-      case 'matches':
-        return (
-          <div className="max-w-4xl mx-auto p-4 pb-20">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">Your Matches</h2>
-            <div className="text-center py-12">
-              <p className="text-gray-500">No matches yet. Keep exploring!</p>
-            </div>
-          </div>
-        );
-      case 'messages':
-        return (
-          <ChatList />
-        );
+      case 'connections':
+        return <ConnectionsScreen />;
       case 'profile':
         return (
           <ProfileScreen
@@ -161,7 +185,10 @@ export default function App() {
 
   return (
     <div className="min-h-screen transition-colors" style={{ backgroundColor: 'var(--bg-secondary)' }}>
-      <Header />
+      <Header 
+        onNavigateToHome={() => setActiveTab('home')} 
+        onNavigateToDiscoveryPreferences={handleNavigateToDiscoveryPreferences}
+      />
       <main className="pt-4">
         {renderContent()}
       </main>
