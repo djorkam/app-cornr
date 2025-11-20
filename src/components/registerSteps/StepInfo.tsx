@@ -1,12 +1,16 @@
-import React from "react";
-import { User } from "lucide-react";
+import React, { useState } from "react";
+import { User, Loader2 } from "lucide-react";
 import { RegisterFormDataType } from "../../types/registerTypes";
+import { authService } from "../../services/authService";
+import { supabase } from "../../lib/supabase";
+import { calculateAge } from "../../utils/utils";
+
 interface StepInfoProps {
   name: RegisterFormDataType["name"];
   birthdate: RegisterFormDataType["birthdate"];
   gender: RegisterFormDataType["gender"];
   customGender: RegisterFormDataType["customGender"];
-
+  userType: 'unicorn' | 'couple' | null;
   validationError: string;
   onChange: (field: keyof RegisterFormDataType, value: string) => void;
   onNext: () => void;
@@ -17,12 +21,72 @@ const StepInfo: React.FC<StepInfoProps> = ({
   gender,
   customGender,
   birthdate,
+  userType,
   validationError,
   onChange,
   onNext,
 }) => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
   const eighteenYearsAgo = new Date();
   eighteenYearsAgo.setFullYear(eighteenYearsAgo.getFullYear() - 18);
+
+  const handleSubmit = async () => {
+    setError("");
+
+    // Validation
+    if (!name.trim() || !birthdate || !gender) {
+      setError("Please fill in all required fields");
+      return;
+    }
+
+    if (gender === "other" && !customGender?.trim()) {
+      setError("Please specify your gender");
+      return;
+    }
+
+    // Age validation
+    const age = calculateAge(birthdate);
+    if (age < 18) {
+      setError("You must be at least 18 to join CORNR");
+      return;
+    }
+
+    if (!userType) {
+      setError("User type not set. Please start over.");
+      return;
+    }
+
+    setLoading(true);
+
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      setError("Not authenticated. Please start over.");
+      setLoading(false);
+      return;
+    }
+
+    // Complete profile with user type and personal data
+    const result = await authService.completeProfile(user.id, userType, {
+      name,
+      birthdate,
+      gender,
+      customGender
+    });
+
+    if (result.error) {
+      setError(result.error.message);
+      setLoading(false);
+      return;
+    }
+
+    // Success! Move to next step
+    setLoading(false);
+    onNext();
+  };
 
   return (
     <>
@@ -34,6 +98,13 @@ const StepInfo: React.FC<StepInfoProps> = ({
 
       <div className="bg-white rounded-2xl shadow-lg p-8">
         <div className="space-y-6">
+          {/* Error Display */}
+          {(error || validationError) && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-600">{error || validationError}</p>
+            </div>
+          )}
+
           {/* Name */}
           <div>
             <label htmlFor="name" className="form-label">
@@ -48,6 +119,7 @@ const StepInfo: React.FC<StepInfoProps> = ({
                 onChange={(e) => onChange("name", e.target.value)}
                 className="form-input form-input-mandatory pl-10"
                 placeholder="Your name"
+                disabled={loading}
               />
             </div>
           </div>
@@ -62,6 +134,7 @@ const StepInfo: React.FC<StepInfoProps> = ({
               value={gender}
               onChange={(e) => onChange("gender", e.target.value)}
               className="form-input form-input-mandatory"
+              disabled={loading}
             >
               <option value="" disabled>
                 Select your gender
@@ -87,6 +160,7 @@ const StepInfo: React.FC<StepInfoProps> = ({
                 onChange={(e) => onChange("customGender", e.target.value)}
                 className="form-input form-input-mandatory"
                 placeholder="e.g. Genderfluid, Agender"
+                disabled={loading}
               />
             </div>
           )}
@@ -103,23 +177,26 @@ const StepInfo: React.FC<StepInfoProps> = ({
               onChange={(e) => onChange("birthdate", e.target.value)}
               className="form-input form-input-mandatory"
               max={eighteenYearsAgo.toISOString().split("T")[0]}
+              disabled={loading}
             />
             <p className="text-sm text-gray-500 mt-2 leading-relaxed">
-              This won't be shown publicly — we just use it to calculate your
-              age.
+              This won't be shown publicly — we just use it to calculate your age.
             </p>
           </div>
 
-          {validationError && (
-            <div className="text-red-500 text-sm">{validationError}</div>
-          )}
-
           <button
-            onClick={onNext}
-            disabled={!name.trim() || !birthdate}
-            className="btn-primary"
+            onClick={handleSubmit}
+            disabled={!name.trim() || !birthdate || loading}
+            className="btn-primary disabled:opacity-50 flex items-center justify-center"
           >
-            Continue
+            {loading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              'Continue'
+            )}
           </button>
         </div>
       </div>

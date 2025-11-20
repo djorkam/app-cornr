@@ -54,7 +54,7 @@ const StepPhoto: React.FC<StepPhotoProps> = ({
                   )}
                 </div>
                 <p className="text-sm text-gray-600 mb-4">
-                  Photo uploaded successfully!
+                  Photo selected!
                 </p>
               </div>
             ) : (
@@ -73,7 +73,7 @@ const StepPhoto: React.FC<StepPhotoProps> = ({
 
             <label className="inline-flex items-center space-x-2 bg-purple-100 hover:bg-purple-200 text-purple-700 font-medium py-3 px-6 rounded-xl cursor-pointer transition-colors">
               <Upload className="w-5 h-5" />
-              <span>{photo ? "Change photo" : "Upload photo"}</span>
+              <span>{photo ? "Change photo" : "Select photo"}</span>
               <input
                 type="file"
                 accept="image/*"
