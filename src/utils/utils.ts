@@ -7,6 +7,8 @@ export interface UserProfile {
   customGender?: string;
   bio: string;
   photo: File | null;
+  photoUrl?: string;
+  coupleBio?: string;
   location: string;
   lookingFor: string;
   interests: string[];
