@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Heart, X, MapPin, ChevronDown } from "lucide-react";
+import { supabase } from "../lib/supabase";
+// import { recordAction, getRatedProfileIds, getPartnerRatings } from "../services/matchService";
+import { recordAction, getProfileIdsToHide, getPartnerRatings } from "../services/matchService";
 
 interface User {
   id: string;
@@ -12,106 +15,21 @@ interface User {
   interests: string[];
   distance: number;
   additionalInfo?: string;
+  profileId: string;
 }
 
-const mockUsers: User[] = [
-  {
-    id: "1",
-    name: "Emma",
-    age: 26,
-    type: "unicorn",
-    images: [
-      "https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=800",
-      "https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=800",
-    ],
-    bio: "Artist and yoga instructor who loves exploring new places and meeting interesting people. Always up for spontaneous adventures.",
-    location: "Downtown, Seattle",
-    interests: ["Art", "Yoga", "Travel", "Photography"],
-    distance: 2.5,
-    additionalInfo:
-      "I spend my weekends painting in local parks and teaching yoga classes. Looking for someone who appreciates creativity and mindfulness.",
-  },
-  {
-    id: "2",
-    name: "Sarah & Mike",
-    age: 28,
-    type: "couple",
-    images: [
-      "https://images.pexels.com/photos/1024311/pexels-photo-1024311.jpeg?auto=compress&cs=tinysrgb&w=800",
-      "https://images.pexels.com/photos/1024311/pexels-photo-1024311.jpeg?auto=compress&cs=tinysrgb&w=800",
-    ],
-    bio: "Adventure-loving couple seeking new connections and experiences together. We love hiking, cooking, and discovering new places.",
-    location: "Capitol Hill, Seattle",
-    interests: ["Hiking", "Cooking", "Music", "Wine"],
-    distance: 1.8,
-    additionalInfo:
-      "We've been together for 5 years and love exploring new experiences together. We enjoy hosting dinner parties and weekend getaways.",
-  },
-  {
-    id: "3",
-    name: "Luna",
-    age: 24,
-    type: "unicorn",
-    images: [
-      "https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=800",
-      "https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=800",
-    ],
-    bio: "Free spirit who loves dancing, good conversations, and spontaneous adventures. Life is too short for boring moments.",
-    location: "Fremont, Seattle",
-    interests: ["Dancing", "Books", "Coffee", "Music"],
-    distance: 3.2,
-    additionalInfo:
-      "I work as a librarian by day and dance instructor by night. I believe in living authentically and connecting deeply with others.",
-  },
-  {
-    id: "4",
-    name: "Alex & Jordan",
-    age: 30,
-    type: "couple",
-    images: [
-      "https://images.pexels.com/photos/1024311/pexels-photo-1024311.jpeg?auto=compress&cs=tinysrgb&w=800",
-      "https://images.pexels.com/photos/1024311/pexels-photo-1024311.jpeg?auto=compress&cs=tinysrgb&w=800",
-    ],
-    bio: "Married couple exploring new dimensions of connection and friendship. We value honesty, communication, and shared experiences.",
-    location: "Ballard, Seattle",
-    interests: ["Fitness", "Movies", "Food", "Travel"],
-    distance: 4.1,
-    additionalInfo:
-      "We love staying active together and trying new restaurants. We're looking for genuine connections and meaningful conversations.",
-  },
-  {
-    id: "5",
-    name: "Maya",
-    age: 29,
-    type: "unicorn",
-    images: [
-      "https://images.pexels.com/photos/1130626/pexels-photo-1130626.jpeg?auto=compress&cs=tinysrgb&w=800",
-      "https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=800",
-    ],
-    bio: "Tech professional by day, creative soul by night. Always up for new experiences and meaningful connections.",
-    location: "South Lake Union, Seattle",
-    interests: ["Tech", "Art", "Hiking", "Gaming"],
-    distance: 1.5,
-    additionalInfo:
-      "I work in software development but my passion is digital art. I love combining technology with creativity in everything I do.",
-  },
-  {
-    id: "6",
-    name: "Chris & Taylor",
-    age: 32,
-    type: "couple",
-    images: [
-      "https://images.pexels.com/photos/1024311/pexels-photo-1024311.jpeg?auto=compress&cs=tinysrgb&w=800",
-      "https://images.pexels.com/photos/1024311/pexels-photo-1024311.jpeg?auto=compress&cs=tinysrgb&w=800",
-    ],
-    bio: "Long-term partners looking to expand our social circle with like-minded people who value authenticity and fun.",
-    location: "Queen Anne, Seattle",
-    interests: ["Travel", "Yoga", "Cooking", "Wine"],
-    distance: 2.8,
-    additionalInfo:
-      "We love hosting game nights and exploring new neighborhoods. We're looking for friends who share our love of good food and great conversations.",
-  },
-];
+interface DiscoveryFeedProps {
+  currentUserId: string;
+  currentUserType: "unicorn" | "couple";
+  discoveryPreferences: {
+    maxDistance: number;
+    pauseDiscovery: boolean;
+    preferredCoupleAgeRange: [number, number];
+    coupleComposition: string[];
+    preferredUnicornAgeRange: [number, number];
+    preferredUnicornGender: string[];
+  };
+}
 
 interface TagPillProps {
   tag: string;
@@ -123,18 +41,28 @@ const TagPill: React.FC<TagPillProps> = ({ tag }) => (
   </span>
 );
 
-export const DiscoveryFeed: React.FC = () => {
+export const DiscoveryFeed: React.FC<DiscoveryFeedProps> = ({
+  currentUserId,
+  currentUserType,
+  discoveryPreferences,
+}) => {
+  console.log("=== COMPONENT RENDERED ===");
+  // ===== STATE DECLARATIONS =====
+  const [users, setUsers] = useState<User[]>([]);
   const [currentUserIndex, setCurrentUserIndex] = useState(0);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isEssentialSectionComplete, setIsEssentialSectionComplete] =
     useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isBouncing, setIsBouncing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [currentMemberId, setCurrentMemberId] = useState<string>("");
+  const [partnerRatings, setPartnerRatings] = useState<any>(null);
 
+  // ===== REFS =====
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const essentialSectionRef = useRef<HTMLDivElement>(null);
-
-  // Touch/Swipe handling
   const touchStartY = useRef<number>(0);
   const touchStartTime = useRef<number>(0);
   const touchStartX = useRef<number>(0);
@@ -143,24 +71,156 @@ export const DiscoveryFeed: React.FC = () => {
   const scrollTimeout = useRef<number | null>(null);
   const isNavigationGesture = useRef<boolean>(false);
 
-  const currentUser = mockUsers[currentUserIndex];
+  // =====  EFFECTS (UNCONDITIONAL - ALL HOOKS BEFORE ANY LOGIC) =====
 
-  // Safety check - if no current user, show fallback
-  if (!currentUser) {
-    return (
-      <div className="relative h-screen overflow-hidden flex items-center justify-center pb-20" style={{ backgroundColor: "var(--bg-secondary)" }}>
-        <div className="text-center px-6">
-          <p className="text-gray-500 text-lg mb-2">No users to display</p>
-          <p className="text-gray-400 text-sm">
-            Check back later for new profiles
-          </p>
-        </div>
-      </div>
-    );
-  }
-
+  // Effect 1: Get current member ID on component mount
   useEffect(() => {
+    const getMemberInfo = async () => {
+      try {
+        const { data, error: fetchError } = await supabase
+          .from("profile_members")
+          .select("id")
+          .eq("auth_user_id", currentUserId)
+          .single();
+
+        if (fetchError) throw fetchError;
+        if (data?.id) {
+          setCurrentMemberId(data.id);
+        }
+      } catch (err) {
+        console.error("Error fetching member info:", err);
+      }
+    };
+
+    getMemberInfo();
+  }, [currentUserId]);
+
+  // Effect 2: Fetch profiles from Supabase
+  useEffect(() => {
+    if (discoveryPreferences.pauseDiscovery) {
+      return;
+    }
+
+    const fetchProfiles = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        let query = supabase
+          .from("profiles")
+          .select(
+            `
+            id,
+            user_type,
+            location,
+            looking_for,
+            interests,
+            couple_bio,
+            profile_members (
+              name,
+              birthdate,
+              gender,
+              photo_url,
+              bio
+            )
+          `
+          )
+          .eq("is_complete", true);
+
+        if (currentUserType === "unicorn") {
+          query = query.eq("user_type", "couple");
+        } else {
+          query = query.eq("user_type", "unicorn");
+        }
+
+        const { data, error: fetchError } = await query;
+
+        if (fetchError) throw fetchError;
+
+        const transformedUsers: User[] = (data || [])
+          .map((profile: any) => {
+            const members = profile.profile_members || [];
+
+            if (profile.user_type === "couple") {
+              const names = members.map((m: any) => m.name).join(" & ");
+              const primaryMember = members[0];
+
+              return {
+                id: profile.id,
+                name: names || "Couple",
+                age: calculateAge(primaryMember?.birthdate),
+                type: "couple",
+                images: members
+                  .map((m: any) => m.photo_url)
+                  .filter(Boolean),
+                bio: profile.couple_bio || "Adventure-loving couple",
+                location: profile.location || "Seattle",
+                interests: profile.interests || [],
+                distance: calculateDistance(),
+                additionalInfo: primaryMember?.bio,
+                profileId: profile.id,
+              };
+            } else {
+              const member = members[0];
+              return {
+                id: profile.id,
+                name: member?.name || "User",
+                age: calculateAge(member?.birthdate),
+                type: "unicorn",
+                images: member?.photo_url ? [member.photo_url] : [],
+                bio: member?.bio || "Looking for meaningful connections",
+                location: profile.location || "Seattle",
+                interests: profile.interests || [],
+                distance: calculateDistance(),
+                profileId: profile.id,
+              };
+            }
+          })
+          .filter((user) => user.images.length > 0);
+
+        // Get already-rated profiles and filter them out
+        const { data: memberData } = await supabase
+          .from("profile_members")
+          .select("profile_id")
+          .eq("auth_user_id", currentUserId)
+          .single();
+
+ // NEW CODE
+if (memberData?.profile_id && currentMemberId) {
+  const { hideIds } = await getProfileIdsToHide(
+    memberData.profile_id,
+    currentMemberId
+  );
+  
+  const filteredUsers = transformedUsers.filter(
+    (user) => !hideIds.includes(user.profileId)
+  );
+  
+  console.log("Filtered users:", filteredUsers.length, "from", transformedUsers.length);
+  setUsers(filteredUsers);
+} else {
+          setUsers(transformedUsers);
+        }
+      } catch (err) {
+        console.error("Error fetching profiles:", err);
+        setError("Failed to load profiles. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfiles();
+  }, [currentUserType, discoveryPreferences, currentUserId, currentMemberId]);
+
+  console.log("=== ABOUT TO DEFINE EFFECT 3 === ");
+
+  // Effect 3: Scroll handler effect 
+  useEffect(() => {
+    //debugger; // This will pause execution
+    console.log("=== EFFECT 3 STARTED ===");
+    
     const handleScroll = () => {
+      console.log("handleScroll fired!");
       if (!scrollContainerRef.current || !essentialSectionRef.current) return;
 
       const container = scrollContainerRef.current;
@@ -169,55 +229,99 @@ export const DiscoveryFeed: React.FC = () => {
       const scrollHeight = container.scrollHeight - container.clientHeight;
       const essentialHeight = essentialSection.offsetHeight;
 
-      // ADD THIS DEBUG CODE:
-  console.log("Scroll metrics:", {
-    scrollTop: scrollTop,
-    scrollHeight: container.scrollHeight,
-    clientHeight: container.clientHeight,
-    maxScroll: container.scrollHeight - container.clientHeight,
-    canScrollMore: scrollTop < (container.scrollHeight - container.clientHeight),
-    isAtBottom: scrollTop >= (container.scrollHeight - container.clientHeight - 10)
-  });
-
-      // Track if user is actively scrolling
       isScrolling.current = true;
       lastScrollTop.current = scrollTop;
 
-      // Clear existing timeout
       if (scrollTimeout.current) {
         clearTimeout(scrollTimeout.current);
       }
 
-      // Set scrolling to false after a shorter delay
       scrollTimeout.current = setTimeout(() => {
         isScrolling.current = false;
       }, 100);
 
-      // Calculate overall scroll progress
       const progress = scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0;
       setScrollProgress(Math.min(progress, 100));
 
-      // Check if essential section is complete
-      const essentialComplete = scrollTop >= essentialHeight * 0.8;
+      const essentialComplete = scrollTop >= essentialHeight * 0.15;
       setIsEssentialSectionComplete(essentialComplete);
     };
 
     const container = scrollContainerRef.current;
+    console.log("Container ref value:", container);
+    console.log("Container exists?", !!container);
+    
     if (container) {
+      console.log("Attaching scroll listener...");
       container.addEventListener("scroll", handleScroll);
+      console.log("Scroll listener attached!");
+      
       return () => {
+        console.log("Cleaning up scroll listener");
         container.removeEventListener("scroll", handleScroll);
         if (scrollTimeout.current) {
           clearTimeout(scrollTimeout.current);
         }
       };
+    } else {
+      console.log("ERROR: Container is null!");
     }
-  }, [currentUserIndex, isTransitioning]);
+  }, []); 
 
-  // Touch event handlers for flick gestures
+  
+  // Effect 4: Fetch partner ratings for current profile
+  useEffect(() => {
+    const fetchRatings = async () => {
+      if (!users[currentUserIndex] || !currentMemberId) return;
+      
+      try {
+        const { data: memberData } = await supabase
+          .from("profile_members")
+          .select("profile_id")
+          .eq("auth_user_id", currentUserId)
+          .single();
+
+        if (memberData?.profile_id) {
+          const ratings = await getPartnerRatings(
+            memberData.profile_id,
+            users[currentUserIndex].profileId,
+            currentMemberId
+          );
+          setPartnerRatings(ratings);
+        }
+      } catch (err) {
+        console.error("Error fetching ratings:", err);
+      }
+    };
+
+    fetchRatings();
+  }, [currentUserIndex, currentMemberId, currentUserId, users]);
+
+  // ===== HELPER FUNCTIONS =====
+
+  const calculateAge = (birthdate: string | null): number => {
+    if (!birthdate) return 0;
+    const today = new Date();
+    const birth = new Date(birthdate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birth.getDate())
+    ) {
+      age--;
+    }
+    return age;
+  };
+
+  const calculateDistance = (): number => {
+    return Math.floor(Math.random() * 20) + 1;
+  };
+
+  // ===== TOUCH HANDLERS =====
+
   const handleTouchStart = (e: React.TouchEvent) => {
     if (isTransitioning) return;
-
     touchStartY.current = e.touches[0].clientY;
     touchStartX.current = e.touches[0].clientX;
     touchStartTime.current = Date.now();
@@ -239,7 +343,6 @@ export const DiscoveryFeed: React.FC = () => {
     const distanceX = Math.abs(deltaX);
     const velocity = distanceY / deltaTime;
 
-    // Early detection of high-velocity navigation gestures
     const isHighVelocityGesture =
       distanceY > 80 &&
       velocity > 0.8 &&
@@ -252,11 +355,9 @@ export const DiscoveryFeed: React.FC = () => {
       );
       isNavigationGesture.current = true;
 
-      // Immediately prevent default scrolling
       e.preventDefault();
       e.stopPropagation();
 
-      // Lock scroll container immediately
       if (scrollContainerRef.current) {
         const container = scrollContainerRef.current;
         container.style.touchAction = "none";
@@ -280,7 +381,6 @@ export const DiscoveryFeed: React.FC = () => {
     const distanceX = Math.abs(deltaX);
     const velocity = distanceY / deltaTime;
 
-    // Navigation gesture thresholds
     const minNavigationDistance = 100;
     const maxNavigationTime = 350;
     const minNavigationVelocity = 0.6;
@@ -292,96 +392,70 @@ export const DiscoveryFeed: React.FC = () => {
       velocity > minNavigationVelocity &&
       distanceX < distanceY * maxHorizontalRatio;
 
-    // Always restore scroll container properties
     if (scrollContainerRef.current) {
       const container = scrollContainerRef.current;
       container.style.touchAction = "";
       container.style.overflowY = "auto";
     }
 
-    console.log("Touch analysis:", {
-      deltaY,
-      distanceY,
-      deltaTime,
-      velocity: velocity.toFixed(3),
-      isNavigationFlick,
-      isNavigationGesture: isNavigationGesture.current,
-      gestureType: isNavigationFlick ? "NAVIGATION" : "SCROLL",
-    });
-
-    // Handle navigation flicks
     if (isNavigationFlick || isNavigationGesture.current) {
-      // Prevent any scroll effects from this gesture
       e.preventDefault();
       e.stopPropagation();
 
       if (deltaY > 0) {
-        // Flick up = next profile
-        if (currentUserIndex < mockUsers.length - 1) {
-          console.log("Navigation UP flick → Next profile");
+        if (currentUserIndex < users.length - 1) {
           nextProfile();
         } else {
-          console.log("Navigation UP flick → Bounce at end");
           bounceBack("up");
         }
       } else {
-        // Flick down = previous profile
         if (currentUserIndex > 0) {
-          console.log("Navigation DOWN flick → Previous profile");
           prevProfile();
         } else {
-          console.log("Navigation DOWN flick → Bounce at start");
           bounceBack("down");
         }
       }
       return;
     }
 
-    // Reset navigation gesture flag
     isNavigationGesture.current = false;
-    console.log("Normal touch gesture → Allow natural behavior");
   };
 
+  // ===== PROFILE NAVIGATION =====
+
   const nextProfile = () => {
-    if (isTransitioning || currentUserIndex >= mockUsers.length - 1) return;
+    console.log("nextProfile called", {
+      isTransitioning,
+      currentUserIndex,
+      usersLength: users.length,
+    });
+    
+    if (isTransitioning) return;
 
     setIsTransitioning(true);
-    console.log("Moving to next profile, immediate scroll reset...");
 
-    // Immediate scroll momentum cancellation
     if (scrollContainerRef.current) {
       const container = scrollContainerRef.current;
-
-      // Stop all scroll behavior immediately
       container.style.scrollBehavior = "auto";
       container.style.overscrollBehavior = "none";
       container.style.touchAction = "none";
-
-      // Force scroll to top immediately
       container.scrollTop = 0;
-
-      // Force a reflow to ensure scroll reset takes effect
       container.offsetHeight;
     }
 
-    // Update profile and states
     setCurrentUserIndex((prev) => prev + 1);
     setScrollProgress(0);
     setIsEssentialSectionComplete(false);
 
-    // Re-enable scroll after transition
     setTimeout(() => {
       if (scrollContainerRef.current) {
         const container = scrollContainerRef.current;
         container.style.scrollBehavior = "smooth";
         container.style.overscrollBehavior = "";
         container.style.touchAction = "";
-
-        // Ensure we're still at the top
         container.scrollTop = 0;
       }
       setIsTransitioning(false);
-      console.log("Next profile transition completed");
     }, 150);
   };
 
@@ -389,97 +463,168 @@ export const DiscoveryFeed: React.FC = () => {
     if (isTransitioning || currentUserIndex <= 0) return;
 
     setIsTransitioning(true);
-    console.log("Moving to previous profile, immediate scroll reset...");
 
-    // Immediate scroll momentum cancellation
     if (scrollContainerRef.current) {
       const container = scrollContainerRef.current;
-
-      // Stop all scroll behavior immediately
       container.style.scrollBehavior = "auto";
       container.style.overscrollBehavior = "none";
       container.style.touchAction = "none";
-
-      // Force scroll to top immediately
       container.scrollTop = 0;
-
-      // Force a reflow
       container.offsetHeight;
     }
 
-    // Update profile and states
     setCurrentUserIndex((prev) => prev - 1);
     setScrollProgress(0);
     setIsEssentialSectionComplete(false);
 
-    // Re-enable scroll after transition
     setTimeout(() => {
       if (scrollContainerRef.current) {
         const container = scrollContainerRef.current;
         container.style.scrollBehavior = "smooth";
         container.style.overscrollBehavior = "";
         container.style.touchAction = "";
-
-        // Ensure we're still at the top
         container.scrollTop = 0;
       }
       setIsTransitioning(false);
-      console.log("Previous profile transition completed");
     }, 150);
   };
 
   const bounceBack = (direction: "up" | "down") => {
     if (isBouncing || isTransitioning) return;
-
-    console.log(
-      `🏀 Bounce back - ${direction} at boundary (${currentUserIndex}/${
-        mockUsers.length - 1
-      })`
-    );
     setIsBouncing(true);
 
-    // Reset bounce state after animation completes
     setTimeout(() => {
       setIsBouncing(false);
-      console.log("Bounce animation completed");
     }, 600);
   };
 
-  const handleLike = () => {
-    if (!isEssentialSectionComplete || isTransitioning) return;
-    console.log("Liked user:", currentUser.id);
-    nextProfile();
-  };
+  // ===== ACTION HANDLERS =====
 
-  const handlePass = () => {
-    if (!isEssentialSectionComplete || isTransitioning) return;
-    console.log("Passed user:", currentUser.id);
-    nextProfile();
-  };
+  const handleLike = async () => {
+  if (!isEssentialSectionComplete || isTransitioning) return;
+  try {
+    const currentUser = users[currentUserIndex];
+    if (!currentUser) return;
+
+    const result = await recordAction({
+      currentUserId,
+      currentMemberId,
+      profileId: currentUser.profileId,
+      action: "like",
+    });
+
+    // Check if it's a match!
+    if (result.data?.isMatch) {
+      // TODO: Show "It's a Match!" modal/notification
+      console.log("🎉 IT'S A MATCH!");
+      alert("🎉 It's a Match!");
+    }
+
+    // Remove from current list
+    setUsers((prev) => prev.filter((u) => u.profileId !== currentUser.profileId));
+    console.log("Liked user:", currentUser.id);
+    
+    // Reset scroll
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
+    setScrollProgress(0);
+    setIsEssentialSectionComplete(false);
+  } catch (err: any) {
+    console.error("Error in handleLike:", err);
+    if (err.message) {
+      alert(err.message);
+    }
+  }
+};
+
+  const handleReject = async () => {
+  if (!isEssentialSectionComplete || isTransitioning) return;
+  try {
+    const currentUser = users[currentUserIndex];
+    if (!currentUser) return;
+
+    await recordAction({
+      currentUserId,
+      currentMemberId,
+      profileId: currentUser.profileId,
+      action: "reject",
+    });
+
+    // Remove from current list
+    setUsers((prev) => prev.filter((u) => u.profileId !== currentUser.profileId));
+    console.log("Rejected user:", currentUser.id);
+    
+    // Reset scroll
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
+    setScrollProgress(0);
+    setIsEssentialSectionComplete(false);
+  } catch (err: any) {
+    console.error("Error in handleReject:", err);
+    if (err.message) {
+      alert(err.message);
+    }
+  }
+};
+
+  // ===== EARLY RETURNS (AFTER ALL HOOKS & FUNCTIONS) =====
+
+  const currentUser = users[currentUserIndex];
+  console.log("Current user:", currentUser?.name, "index:", currentUserIndex);
+  
+  if (loading) {
+    return (
+      <div className="relative h-screen overflow-hidden flex items-center justify-center pb-20" style={{ backgroundColor: "var(--bg-secondary)" }}>
+        <div className="text-center px-6">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
+          <p className="text-gray-600 mt-4">Loading profiles...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || users.length === 0) {
+    return (
+      <div className="relative h-screen overflow-hidden flex items-center justify-center pb-20" style={{ backgroundColor: "var(--bg-secondary)" }}>
+        <div className="text-center px-6">
+          <p className="text-gray-600 text-lg mb-2">{error || "No profiles available"}</p>
+          <p className="text-gray-400 text-sm">Check back later for new matches</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return (
+      <div className="relative h-screen overflow-hidden bg-purple-50">
+        <div className="h-full overflow-y-auto scrollbar-hide flex items-center justify-center">
+          <div className="text-center px-6">
+            <p className="text-gray-600 text-lg mb-2">No profiles available</p>
+            <p className="text-gray-400 text-sm">Check back later for new matches</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ===== MAIN JSX RETURN =====
 
   return (
     <div
-      
-      className="relative h-screen overflow-hidden bg-purple-50" 
-      
+      className="relative h-screen overflow-hidden bg-purple-50"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      
-      
     >
-      {/* Main Content */}
       <div
         ref={scrollContainerRef}
         className={`h-full overflow-y-auto scrollbar-hide transition-all duration-300 ${
-        
-                  isTransitioning ? "opacity-50" : "opacity-100"
+          isTransitioning ? "opacity-50" : "opacity-100"
         } ${isBouncing ? "animate-bounce-subtle" : ""}`}
-      style={{ scrollBehavior: "smooth",
-             paddingBottom: "160px" }}
-        
+        style={{ scrollBehavior: "smooth", paddingBottom: "160px" }}
       >
-        {/* Essential Section */}
         <div ref={essentialSectionRef} className="relative">
           {/* Primary Photo with Type Badge */}
           <div className="relative h-screen max-h-[70vh] overflow-hidden">
@@ -505,7 +650,7 @@ export const DiscoveryFeed: React.FC = () => {
             {/* Profile Counter */}
             <div className="absolute top-6 left-6">
               <span className="px-3 py-1 bg-black/50 text-white rounded-full text-xs font-medium">
-                {currentUserIndex + 1} of {mockUsers.length}
+                {currentUserIndex + 1} of {users.length}
               </span>
             </div>
 
@@ -533,11 +678,43 @@ export const DiscoveryFeed: React.FC = () => {
 
           {/* Bio Section */}
           <div className="px-6 py-8 bg-white">
+            {/* Badge: Partner liked this */}
+            {/*
+            {partnerRatings?.partnerLikedIt && (
+              <div className="mb-4 p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                <p className="text-purple-700 text-sm">💜 Your partner liked this!</p>
+              </div>
+            )}
+            */}
+            {partnerRatings?.canResurrect && (
+  <div className="mb-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-300 rounded-xl shadow-md">
+    <div className="flex items-start space-x-3">
+      <div className="flex-shrink-0 mt-1">
+        <div className="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center text-white text-xl">
+          🔄
+        </div>
+      </div>
+      <div className="flex-1">
+        <h4 className="text-purple-800 font-semibold text-base mb-1">
+          💜 Second Chance!
+        </h4>
+        <p className="text-purple-700 text-sm leading-relaxed">
+          Your partner liked this profile. You previously passed, but you can change your mind!
+        </p>
+      </div>
+    </div>
+  </div>
+)}
+{partnerRatings?.partnerLikedIt && !partnerRatings?.canResurrect && (
+  <div className="mb-4 p-3 bg-purple-50 border border-purple-200 rounded-lg">
+    <p className="text-purple-700 text-sm">💜 Your partner liked this!</p>
+  </div>
+)}
+            
             <p className="text-gray-800 text-lg leading-relaxed mb-6">
               {currentUser.bio}
             </p>
 
-            {/* Interests */}
             {currentUser.interests.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-6">
                 {currentUser.interests.map((interest) => (
@@ -574,16 +751,15 @@ export const DiscoveryFeed: React.FC = () => {
         {/* End of Profile Indicator */}
         <div className="px-6 py-12 text-center bg-gray-50">
           <p className="text-gray-500 text-sm">
-            {currentUserIndex < mockUsers.length - 1
-              ? "Swipe vertically or use like/pass buttons"
+            {currentUserIndex < users.length - 1
+              ? "Swipe vertically or use like/reject buttons"
               : "You've reached the end of suggestions"}
           </p>
         </div>
       </div>
 
       {/* Floating Action Bar */}
-      
-     <div className="fixed bottom-16 left-0 right-0 bg-white border-t border-gray-200 px-6 py-4 shadow-lg z-30">   
+      <div className="fixed bottom-16 left-0 right-0 bg-white border-t border-gray-200 px-6 py-4 shadow-lg z-30">
         {/* Progress Indicator */}
         <div className="w-full h-1 bg-gray-200 rounded-full mb-4">
           <div
@@ -595,7 +771,7 @@ export const DiscoveryFeed: React.FC = () => {
         {/* Action Buttons */}
         <div className="flex justify-center space-x-8">
           <button
-            onClick={handlePass}
+            onClick={handleReject}
             disabled={!isEssentialSectionComplete || isTransitioning}
             className={`flex items-center justify-center w-16 h-16 rounded-full border-2 transition-all duration-200 ${
               isEssentialSectionComplete && !isTransitioning
@@ -603,7 +779,7 @@ export const DiscoveryFeed: React.FC = () => {
                 : "bg-gray-100 border-gray-200 text-gray-300 cursor-not-allowed"
             }`}
             style={{ zIndex: 31 }}
-            aria-label="Pass"
+            aria-label="Reject"
           >
             <X className="w-7 h-7" />
           </button>

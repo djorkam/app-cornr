@@ -36,6 +36,7 @@ export const InviteCodeRedemption: React.FC<InviteCodeRedemptionProps> = ({
     setIsRedeeming(true);
     try {
       const response = await redeemInviteCode(inviteCode, userId);
+      console.log('🔴 Redemption response:', response);
       setResult(response);
       
       if (response.success && response.partnerInfo) {

@@ -6,9 +6,10 @@ import { BurgerMenu } from './BurgerMenu';
 interface HeaderProps {
   onNavigateToHome?: () => void;
   onNavigateToDiscoveryPreferences?: () => void;
+  onOpenAccountSettings?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onNavigateToHome, onNavigateToDiscoveryPreferences }) => {
+export const Header: React.FC<HeaderProps> = ({ onNavigateToHome, onNavigateToDiscoveryPreferences, onOpenAccountSettings }) => {
   const [showBurgerMenu, setShowBurgerMenu] = React.useState(false);
 
   const handleLogoClick = () => {
@@ -101,6 +102,8 @@ export const Header: React.FC<HeaderProps> = ({ onNavigateToHome, onNavigateToDi
         isOpen={showBurgerMenu} 
         onClose={() => setShowBurgerMenu(false)} 
         onNavigateToDiscoveryPreferences={onNavigateToDiscoveryPreferences}
+        onOpenAccountSettings={onOpenAccountSettings}
+        
       />
     </>
   );

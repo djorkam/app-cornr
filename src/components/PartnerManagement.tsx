@@ -7,11 +7,15 @@ import { InviteCodeRedemption } from './InviteCodeRedemption';
 interface PartnerManagementProps {
   userId: string;
   userType: 'unicorn' | 'couple';
+  onPartnerLinked?: () => void;
+  onPartnerUnlinked?: () => void;
 }
 
 export const PartnerManagement: React.FC<PartnerManagementProps> = ({
   userId,
-  userType
+  userType,
+  onPartnerLinked,
+  onPartnerUnlinked
 }) => {
   const [partnerId, setPartnerId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -37,9 +41,18 @@ export const PartnerManagement: React.FC<PartnerManagementProps> = ({
     setIsUnlinking(true);
     try {
       const success = await unlinkPartner(userId);
+      console.log('🔴 unlinkPartner success:', success);
       if (success) {
         setPartnerId(null);
         setShowUnlinkConfirm(false);
+        console.log('🔴 onPartnerUnlinked callback:', onPartnerUnlinked);
+        // Notify parent component to refresh partner data
+        if (onPartnerUnlinked) {
+          console.log('🔴 Calling onPartnerUnlinked');
+          onPartnerUnlinked();
+        }   else {
+          console.log('🔴 onPartnerUnlinked is undefined!');
+          }
       }
     } catch (error) {
       console.error('Failed to unlink partner:', error);
@@ -49,7 +62,17 @@ export const PartnerManagement: React.FC<PartnerManagementProps> = ({
   };
 
   const handlePartnerLinked = (partnerInfo: any) => {
+    console.log('🟢 PartnerManagement.handlePartnerLinked called with:', partnerInfo);
     setPartnerId(partnerInfo.id);
+        // Notify parent component to refresh partner data
+    if (onPartnerLinked) {
+      console.log('🟢 Calling onPartnerLinked callback');
+      onPartnerLinked();
+      }
+    else {
+      console.log('🔴 onPartnerLinked is undefined!');      
+    }
+
   };
 
   if (userType !== 'couple') {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { ArrowLeft, Info, Camera } from "lucide-react";
 import { motion } from "framer-motion";
+import { useAuth } from "../hooks/useAuth";
 import { calculateAge, formatGender } from "../utils/utils";
 import { RegisterFormDataType } from "../types/registerTypes";
 import StepInfo from "./registerSteps/StepInfo";
@@ -9,9 +10,11 @@ import StepBio from "./registerSteps/StepBio";
 import StepType from "./registerSteps/StepType";
 import StepCredentials from "./registerSteps/StepCredentials";
 import StepVerification from "./registerSteps/StepVerification";
-import { InviteCodeDisplay } from "./InviteCodeDisplay";
-import { InviteCodeRedemption } from "./InviteCodeRedemption";
+import StepPreview from "./registerSteps/StepPreview";
+// import { InviteCodeDisplay } from "./InviteCodeDisplay";
+// import { InviteCodeRedemption } from "./InviteCodeRedemption";
 import { EnterCodeScreen } from "./EnterCodeScreen";
+import { photoService } from "../services/photoService";
 import { extractInviteCodeFromUrl, storePendingInviteCode } from "../utils/partnerUtils";
 
 interface RegisterScreenProps {
@@ -38,6 +41,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
   onRegister,
   onSwitchToSignIn,
 }) => {
+  const { user } = useAuth();
   const [showEnterCodeScreen, setShowEnterCodeScreen] = useState(false);
   const [deepLinkCode, setDeepLinkCode] = useState<string | null>(null);
   const [stepIndex, setStepIndex] = useState(0);
@@ -54,6 +58,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
     customGender: "",
     bio: "",
     photo: null as File | null,
+    
   });
 
   const [validationError, setValidationError] = useState("");
@@ -99,6 +104,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
   const handleNext = () => {
     setValidationError("");
 
+    /* COMMENTED: The validation is now handled in StepCredentials itself.
     if (step === "credentials") {
       if (!formData.email || !formData.password || !formData.confirmPassword) {
         setValidationError("Please fill in all fields to continue.");
@@ -109,12 +115,14 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
         return;
       }
     }
+    */
 
     if (step === "verification") {
       // Simulate email verification
       setIsEmailVerified(true);
     }
 
+    /* COMMENTED: Also remove the info step validation (lines ~125-140) since StepInfo handles it now.
     if (step === "info") {
       if (
         !formData.name.trim() ||
@@ -135,6 +143,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
         return;
       }
     }
+    */
 
     if (step === "preview") {
       if (userType) {
@@ -215,6 +224,18 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
     );
   }
 
+  const userProfile = {
+    name: formData.name,
+    birthdate: formData.birthdate,
+    gender: formData.gender,
+    customGender: formData.customGender,
+    bio: formData.bio,
+    photo: formData.photo,
+    interests: [],
+    location: '',
+    lookingFor: ''
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-25 to-purple-50 flex flex-col">
       {/* Header */}
@@ -284,7 +305,8 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
                 password={formData.password}
                 confirmPassword={formData.confirmPassword}
                 onChange={handleInputChange}
-                handleNext={handleNext}
+                onSuccess={nextStep} 
+                //handleNext={handleNext}
                 validationError={validationError}
               />{" "}
             </>
@@ -305,6 +327,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
                 gender={formData.gender}
                 customGender={formData.customGender}
                 birthdate={formData.birthdate}
+                userType={userType}
                 validationError={validationError}
                 onChange={handleInputChange}
                 onNext={handleNext}
@@ -317,6 +340,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
                 photo={formData.photo}
                 handlePhotoUpload={handlePhotoUpload}
                 handleNext={handleNext}
+                userId={user?.id || "demo-user-id"}
               />
             </>
           ) : step === "bio" ? (
@@ -332,65 +356,17 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
           ) : (
             <>
               {/* Profile Preview */}
-              <div className="text-center mb-8">
-                <p className="text-gray-600 leading-relaxed">
-                  This is what others will see when they discover you on CORNR.
-                </p>
-              </div>
+      <StepPreview
+      userType={userType || 'unicorn'}
+      userProfile={userProfile}
+      onConfirm={handleNext}
+      onEdit={() => goToStep("info")}
+      loading={false}
+    />
 
-              <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">
-                {/* Profile Preview Card */}
-                <div className="text-center mb-6">
-                  <div className="w-24 h-24 mx-auto rounded-full overflow-hidden mb-4 border-4 border-purple-200">
-                    {formData.photo ? (
-                      <img 
-                        src={URL.createObjectURL(formData.photo)} 
-                        alt="Profile preview" 
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-purple-100 flex items-center justify-center">
-                        <span className="text-purple-600 text-2xl">
-                          {userType === "unicorn" ? "🦄" : "👫"}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <h3 className="text-xl mb-1">
-                    <span className="text-2xl font-semibold text-gray-800">
-                      {formData.name}
-                    </span>
-                    <span className="text-2xl font-normal text-gray-600">
-                      , {calculateAge(formData.birthdate)}
-                    </span>
-                  </h3>
-
-                  <p className="text-sm text-gray-600 mb-2">
-                    {formatGender(formData.gender, formData.customGender)}
-                  </p>
-                  <p className="text-base text-gray-700 mt-4 mb-4 px-2 leading-relaxed">
-                    {formData.bio || "No bio added yet"}
-                  </p>
-                  <span
-                    className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                      userType === "unicorn"
-                        ? "bg-purple-100 text-purple-700"
-                        : "bg-pink-100 text-pink-700"
-                    }`}
-                  >
-                    {userType === "unicorn" ? "🦄 Unicorn" : "👫 Couple"}
-                  </span>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="space-y-3">
-                <button onClick={handleNext} className="btn-primary">
-                  Let's go live ✨
-                </button>
-                
+                                 
                 {/* Show invite code for couples */}
-                {userType === "couple" && (
+                {/* {userType === "couple" && (
                   <div className="mt-6 p-4 bg-purple-50 border border-purple-200 rounded-lg">
                     <h3 className="text-lg font-semibold text-purple-800 mb-3">
                       🎉 Almost there! Connect with your partner:
@@ -398,15 +374,15 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
                     
                     <div className="space-y-4">
                       {/* Generate code to share */}
-                      <div>
-                        <InviteCodeDisplay 
-                          userId="demo-user-id" 
+                      {/* <div>
+                        <InviteCodeDisplay
+                          userId={user?.id || ""}
                           onCodeGenerated={(code) => console.log('Generated code for new couple:', code)}
                         />
                       </div>
                       
                       {/* Secondary option to enter code */}
-                      <div className="text-center pt-2">
+                      {/* <div className="text-center pt-2">
                         <button
                           onClick={handleEnterCodeClick}
                           className="text-purple-600 hover:text-purple-700 font-medium text-sm underline"
@@ -416,15 +392,9 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
                       </div>
                     </div>
                   </div>
-                )}
-                
-                <button
-                  onClick={() => goToStep("info")}
-                  className="btn-secondary"
-                >
-                  Edit info
-                </button>
-              </div>
+                )} */}
+             
+              
             </>
           )}
         </div>

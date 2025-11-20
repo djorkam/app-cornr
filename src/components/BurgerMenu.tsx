@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { authService } from '../services/authService';
 import { 
   X, 
   Settings, 
@@ -18,9 +19,10 @@ interface BurgerMenuProps {
   isOpen: boolean;
   onClose: () => void;
   onNavigateToDiscoveryPreferences?: () => void;
+  onOpenAccountSettings?: () => void;
 }
 
-export const BurgerMenu: React.FC<BurgerMenuProps> = ({ isOpen, onClose, onNavigateToDiscoveryPreferences }) => {
+export const BurgerMenu: React.FC<BurgerMenuProps> = ({ isOpen, onClose, onNavigateToDiscoveryPreferences, onOpenAccountSettings }) => {
   // Close menu on escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -144,7 +146,7 @@ export const BurgerMenu: React.FC<BurgerMenuProps> = ({ isOpen, onClose, onNavig
                   icon={<User className="w-4 h-4 text-purple-600" />}
                   title="Account"
                   onClick={() => {
-                    console.log('Navigate to Account');
+                    onOpenAccountSettings?.();
                     onClose();
                   }}
                 />
@@ -200,16 +202,18 @@ export const BurgerMenu: React.FC<BurgerMenuProps> = ({ isOpen, onClose, onNavig
           </div>
 
           {/* Log Out Button */}
+
+  
           <div className="p-6 border-t border-gray-100">
-            <MenuItem
-              icon={<LogOut className="w-4 h-4 text-red-600" />}
-              title="Log Out"
-              onClick={() => {
-                console.log('Log out user');
-                onClose();
-              }}
-              isDestructive
-            />
+          <MenuItem
+  icon={<LogOut className="w-4 h-4 text-red-600" />}
+  title="Log Out"
+  onClick={async () => {
+    await authService.signOut();
+    window.location.href = '/';
+  }}
+  isDestructive
+/>
           </div>
         </div>
       </div>

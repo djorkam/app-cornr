@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Mail, Info } from "lucide-react";
 import PasswordInput from "./PasswordInput";
+import { Loader2 } from "lucide-react";
+import { authService } from "../services/authService";
 
 interface SignInScreenProps {
   onSignIn: () => void;
@@ -15,11 +17,26 @@ export const SignInScreen: React.FC<SignInScreenProps> = ({
 }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+const [error, setError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setLoading(true);
+  setError("");
+
+  const { data, error: signInError } = await authService.signIn(email, password);
+  
+  if (signInError) {
+    setError(signInError.message);
+    setLoading(false);
+    return;
+  }
+
+  if (data.user) {
     onSignIn();
-  };
+  }
+};
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-25 to-purple-50 flex flex-col">
@@ -55,6 +72,11 @@ export const SignInScreen: React.FC<SignInScreenProps> = ({
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
+              {error && (
+  <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+    <p className="text-sm text-red-600">{error}</p>
+  </div>
+)}
               <div>
                 <label htmlFor="email" className="form-label">
                   Email
@@ -67,21 +89,37 @@ export const SignInScreen: React.FC<SignInScreenProps> = ({
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="form-input pl-10 bg-gray-50 border border-gray-300"
+                    disabled={loading}
                     placeholder="Enter your email"
                     required
                   />
                 </div>
               </div>
 
-              <PasswordInput value={password} onChange={setPassword} required />
+              
+              <PasswordInput 
+  value={password} 
+  onChange={setPassword} 
+  required 
+  className={loading ? "opacity-50" : ""}
+/>
 
               <div className="pt-2">
-                <button
-                  type="submit"
-                  className="w-full font-semibold py-3 px-4 rounded-xl text-white transition-colors focus:outline-none focus:ring-2 focus:ring-purple-300 focus:ring-offset-2 bg-[#9F8BC7] hover:bg-[#8A76B3]"
-                >
-                  Sign In
-                </button>
+<button
+  type="submit"
+  disabled={loading}
+  className="w-full font-semibold py-3 px-4 rounded-xl text-white transition-colors focus:outline-none focus:ring-2 focus:ring-purple-300 focus:ring-offset-2 bg-[#9F8BC7] hover:bg-[#8A76B3] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+>
+  {loading ? (
+    <>
+      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+      Signing in...
+    </>
+  ) : (
+    'Sign In'
+  )}
+</button>
+                
               </div>
 
               <div className="text-center">
